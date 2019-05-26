@@ -1,9 +1,6 @@
 var tName = '';
 const tSchema = 'test'; // 環境に合わせて変える
 const tDatSrc ='Provider=MSDASQL; Data Source=Connector_MariaDB'; // 環境に合わせて変える
-function func_Init() {
-  setList();
-}
 // テーブル一覧画面
 function setList() {
   var cn = new ActiveXObject('ADODB.Connection');
@@ -68,28 +65,22 @@ function colPage(tName) {
   while (!rs.EOF){
     if (rs(0).value != '') { cmtFlg = 1; }   // 項目コメントの有無
     var dtype = rs(2).value;
+    var txtNum = 60;
     if (dtype == 'date') {
-      strDoc1 += '<td style="width:90px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:90px;">' + rs(1).value + '</td>';
+      txtNum = 90;
     } else if (dtype == 'time') {
-      strDoc1 += '<td style="width:70px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:70px;">' + rs(1).value + '</td>';
+      txtNum = 70;
     } else if (dtype == 'datetime') {
-      strDoc1 += '<td style="width:130px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:130px;">' + rs(1).value + '</td>';
+      txtNum = 130;
     } else if (dtype == 'text') {
-      strDoc1 += '<td style="width:400px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:400px;">' + rs(1).value + '</td>';
+      txtNum = 400;
     } else if (dtype.slice(0,7) == 'varchar') {
-      var txtNum = dtype.slice(8,(dtype.length -1)) * 8 + 10;
+      txtNum = dtype.slice(8,(dtype.length -1)) * 8 + 10;
       if (txtNum > 400) { txtNum = 400; }
       if (txtNum < 80) { txtNum = 80; }
-      strDoc1 += '<td style="width:' + txtNum + 'px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:' + txtNum + 'px;">' + rs(1).value + '</td>';
-    } else {  
-      strDoc1 += '<td style="width:60px;">' + rs(0).value + '</td>';
-      strDoc2 += '<td style="width:60px;">' + rs(1).value + '</td>';
     }
+    strDoc1 += '<td style="width:' + txtNum + 'px;">' + rs(0).value + '</td>';
+    strDoc2 += '<td style="width:' + txtNum + 'px;">' + rs(1).value + '</td>';
     strDoc3 += '<td nowrap>' + dtype + '</td>';
     rs.MoveNext();
   }
