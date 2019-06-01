@@ -45,9 +45,12 @@ function setList() {
 function colPage(tName) {
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
-  var mySql = "SELECT COLUMN_COMMENT,COLUMN_NAME,COLUMN_TYPE"
-            + " FROM information_schema.COLUMNS"
-            + " WHERE TABLE_SCHEMA = '" + tSchema + "' AND TABLE_NAME = '" + tName + "'";
+  var mySql = "SELECT C.COLUMN_COMMENT,C.COLUMN_NAME,C.COLUMN_TYPE,K.ORDINAL_POSITION"
+            + " FROM information_schema.`COLUMNS` C"
+            + " LEFT OUTER JOIN information_schema.KEY_COLUMN_USAGE K"
+            + " ON (K.TABLE_NAME = C.TABLE_NAME"
+            + " AND K.COLUMN_NAME = C.COLUMN_NAME)"
+            + " WHERE C.TABLE_SCHEMA = '" + tSchema + "' AND C.TABLE_NAME = '" + tName + "'";
   cn.Open(tDatSrc);
   try {
     rs.Open(mySql, cn);
@@ -80,7 +83,11 @@ function colPage(tName) {
       if (txtNum < 80) { txtNum = 80; }
     }
     strDoc1 += '<td style="width:' + txtNum + 'px;">' + rs(0).value + '</td>';
-    strDoc2 += '<td style="width:' + txtNum + 'px;">' + rs(1).value + '</td>';
+    if (rs(3).value != null) {
+      strDoc2 += '<td style="width:' + txtNum + 'px;"><font color="aqua">' + rs(1).value + '</font></td>';
+    } else {
+      strDoc2 += '<td style="width:' + txtNum + 'px;">' + rs(1).value + '</td>';
+    }
     strDoc3 += '<td nowrap>' + dtype + '</td>';
     rs.MoveNext();
   }
