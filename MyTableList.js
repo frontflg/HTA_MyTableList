@@ -5,6 +5,7 @@ const tDatSrc ='Provider=MSDASQL; Data Source=Connector_MariaDB'; // 環境に�
 function setList() {
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
+  var rs2 = new ActiveXObject('ADODB.Recordset');
   var mySql = "SELECT TABLE_NAME,TABLE_COMMENT,TABLE_ROWS,DATE_FORMAT(CREATE_TIME,'%Y/%m/%d %H:%i:%s')"
             + " FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" + tSchema + "'";
   cn.Open(tDatSrc);
@@ -27,9 +28,17 @@ function setList() {
   var strDoc = '';
   while (!rs.EOF){
     strDoc += '<tr><td style="width:150px;"><a href="#" onClick=colPage("' + rs(0).value + '")>' + rs(0).value + '</a></td>';
-    strDoc += '<td width="300">' + rs(1).value + '</a></td>';
-    strDoc += '<td width="80" align="RIGHT">' + rs(2).value + '</a></td>';
-    strDoc += '<td width="200">' + rs(3).value + '</a></td></tr>';
+    strDoc += '<td width="300">' + rs(1).value + '</td>';
+    if (rs(2).value == null) {
+      var mySql2 = "SELECT COUNT(*) FROM " + rs(0).value;
+      rs2.Open(mySql2, cn);
+      strDoc += '<td width="80" align="RIGHT">' + rs2(0).value + '</td>';
+      strDoc += '<td width="200"></td></tr>';
+      rs2.Close();
+    } else {
+      strDoc += '<td width="80" align="RIGHT">' + rs(2).value + '</td>';
+      strDoc += '<td width="200">' + rs(3).value + '</td></tr>';
+    }
     rs.MoveNext();
   }
   $('#lst01').replaceWith('<tbody id="lst01">' + strDoc + '</tbody>');
