@@ -1,0 +1,204 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta http-equiv="content-script-type" content="text/javascript">
+  <meta http-equiv="content-style-type" content="text/css">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <title>Output_CSV</title>
+  <hta:application id="myapp" 
+    applicationname="MyTableList" 
+    border="thick"
+    caption="yes"
+    navigate="yes"
+    showintaskbar="yes"
+    singleinstance="yes"
+    sysmenu="yes"
+    windowstate="normal">
+  <script type="text/javascript">
+  <!--
+  function setOptList() {
+    var cn = new ActiveXObject("ADODB.Connection"); 
+    cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+    var sqlStr = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'test'";
+    try {
+       var rs  = cn.Execute(sqlStr);
+    } catch (e) {
+       alert("SQLの実行が失敗しました");
+       cn.Close();
+       return ;
+    }
+    while (!rs.EOF){
+      var op = document.createElement("option");
+      op.value = rs(0).value;                               // value値
+      op.appendChild(document.createTextNode(rs(0).value)); // 表示用文字列'
+      document.getElementById("tblList").appendChild(op);
+      rs.MoveNext();
+    }
+    rs.Close();
+    cn.Close();
+    rs = null;
+    cn = null;
+  }
+  function func_Select() {
+    if (document.all('tbl').value == 'none') {
+      alert("テーブルを選択して下さい。");
+      return ;
+    }
+    var cn = new ActiveXObject("ADODB.Connection"); 
+    cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+    var sqlStr = "SELECT * FROM " + document.all('tbl').value + " ORDER BY 1";
+    try {
+       var rs  = cn.Execute(sqlStr);
+    } catch (e) {
+       alert("SQLの実行が失敗しました");
+       cn.Close
+       return ;
+    }
+    document.write(sqlStr.toUpperCase());
+    document.write('　<button type="submit" onClick="window.close(); return false;">閉じる</button><br>');
+    document.write("<br><table border=1><tr>");
+    for (var i=0; i<rs.Fields.Count; i++) {
+       document.write("<td bgcolor=lightcyan>"+rs.Fields(i).name+"</td>");
+    }
+    document.write("</tr>");
+    while (!rs.EOF){
+       for (var i=0; i<rs.Fields.Count; i++) {
+          if (rs(i).value == null) {
+             document.write("<td>null</td>");
+          } else if (rs.Fields(i).Type == 133 ||
+                     rs.Fields(i).Type == 135) {
+             var date = new Date( rs(i).value );
+             buff = date.toLocaleString();
+             buff = buff.replace("年","/");
+             buff = buff.replace("月","/");
+             buff = buff.replace("日","/");
+             buff = buff.replace("/ 0:00:00","");
+             document.write("<td>" + buff + "</td>");
+          } else if (rs.Fields(i).Type == 134) {
+             var time = new Date( rs(i).value );
+             var hh = time.getHours();
+             var mm = time.getMinutes();
+             var ss = time.getSeconds();
+             document.write("<td>" + hh + ":" + mm + ":" + ss + "</td>");
+          } else {
+             document.write("<td>" + rs(i).value + "</td>");
+          }
+       }
+       document.write("</tr>");
+       rs.MoveNext();
+    }
+    document.write("</table>");
+    rs.Close();
+    cn.Close();
+    rs = null;
+    cn = null;
+  }
+  function func_CSVOut() {
+    if (document.all('tbl').value == 'none') {
+      alert("テーブルを選択して下さい。");
+      return ;
+    }
+    var cn = new ActiveXObject("ADODB.Connection");
+    cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+    var sqlStr = "SELECT * FROM " + document.all('tbl').value + " ORDER BY 1";
+    try {
+       var rs  = cn.Execute(sqlStr);
+    } catch (e) {
+       alert("SQLの実行が失敗しました" + sqlStr);
+       cn.Close
+    }
+    var sh  = new ActiveXObject("WScript.Shell");
+    var TextFile = document.all('tbl').value
+    if (TextFile.search(/\s/) > 0) {
+       TextFile = TextFile.substring(0,TextFile.search(/\s/)); 
+    } 
+    var TextFile = sh.CurrentDirectory + "\\" + TextFile + ".csv";
+    var csv = new ActiveXObject("ADODB.Stream");
+    csv.Type = 2;           // テキスト
+    csv.charset = "utf-8";  // UTF-8
+    csv.Open();
+    var TextLine = "";
+    TextLine = rs.Fields(0).name;
+    for (var i=1; i<rs.Fields.Count; i++) {
+       TextLine = TextLine + "," + rs.Fields(i).name;
+    }
+    csv.WriteText(TextLine, 1 );  // 改行あり
+    var buff;
+    while (!rs.EOF){
+       TextLine = rs(0).value;
+       for (var i=1; i<rs.Fields.Count; i++) {
+          if (rs(i).value == null) {
+             TextLine = TextLine + ",";
+          } else if (rs.Fields(i).Type == 133 ||
+                     rs.Fields(i).Type == 135) {
+             var date = new Date( rs(i).value );
+             buff = date.toLocaleString();
+             buff = buff.replace("年","/");
+             buff = buff.replace("月","/");
+             buff = buff.replace("日","/");
+             buff = buff.replace("/ 0:00:00","");
+             buff = buff.replace(" ","");
+             TextLine = TextLine + "," + buff;
+          } else if (rs.Fields(i).Type == 134) {
+             var time = new Date( rs(i).value );
+             var hh = time.getHours();
+             var mm = time.getMinutes();
+             var ss = time.getSeconds();
+             TextLine = TextLine + "," + hh + ":" + mm + ":" + ss;
+          } else {
+             TextLine = TextLine+ "," + rs(i).value ;
+          }
+       }
+       csv.WriteText(TextLine, 1 );  // 改行あり
+       rs.MoveNext();
+    }
+
+    // BOMなしに書き直し
+    csv.Position = 0;       // 先頭に位置付け
+    csv.Type = 1;           // バイナリ
+    csv.Position = 3;       // 3バイト進める
+    var bytes = csv.Read(); // 読み直す
+    csv.Position = 0;       // 先頭に位置付け直す
+    csv.SetEOS();
+    csv.Write(bytes);       // バイトで書き直す
+
+    csv.SaveToFile(TextFile, 2 );    // ある場合は上書き
+    csv.Close();
+    rs.Close();
+    cn.Close();
+    rs  = null;
+    cn  = null;
+    alert(TextFile + "\nに出力しました");
+  }
+  // -->
+  </script>
+  <style type="text/css">
+    html[lang="ja"] body,
+    html[lang="ja"] input,
+    html[lang="ja"] button,
+    html[lang="ja"] select {
+      font-family: Calibri, YuGothic, "Yu Gothic", "游ゴシック", "游ゴシック体", "Hiragino Kaku Gothic Pro", Meiryo, sans-serif;
+    }
+  </style
+</head>
+  <body>
+    データ展開するテーブル名を選択して下さい。<br>
+    <table>
+    <tr>
+      <td>
+        <select name="tbl" id="tblList">
+          <option value="none">▼選択してください</option>
+        </select>
+    </tr>
+    <tr>
+      <td><button type="submit" onClick="func_Select();">検索</button>
+          <button type="submit" onClick="func_CSVOut();">CSV</button>
+    </td>
+    </tr>
+    </table>
+  <script>
+  setOptList();
+  </script>
+  </body>
+ </html>
