@@ -20,7 +20,9 @@
   function setOptList() {
     var cn = new ActiveXObject("ADODB.Connection"); 
     cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+ // cn.Open('Driver={Microsoft ODBC for Oracle}; CONNECTSTRING=XXXX; UID=XXXX; PWD=XXXX;');
     var sqlStr = "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'test'";
+ // var sqlStr = "SELECT TABLE_NAME FROM ALL_USER_TABLES WHERE OWNER = 'test'";
     try {
        var rs  = cn.Execute(sqlStr);
     } catch (e) {
@@ -47,6 +49,7 @@
     }
     var cn = new ActiveXObject("ADODB.Connection"); 
     cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+ // cn.Open('Driver={Microsoft ODBC for Oracle}; CONNECTSTRING=XXXX; UID=XXXX; PWD=XXXX;');
     var sqlStr = "SELECT * FROM " + document.all('tbl').value + " ORDER BY 1";
     try {
        var rs  = cn.Execute(sqlStr);
@@ -101,6 +104,7 @@
     }
     var cn = new ActiveXObject("ADODB.Connection");
     cn.Open('Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+ // cn.Open('Driver={Microsoft ODBC for Oracle}; CONNECTSTRING=XXXX; UID=XXXX; PWD=XXXX;');
     var sqlStr = "SELECT * FROM " + document.all('tbl').value + " ORDER BY 1";
     try {
        var rs  = cn.Execute(sqlStr);
