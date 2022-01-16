@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type"        content="text/html; charset=UTF-8">
+  <meta http-equiv="content-script-type" content="text/javascript">
+  <meta http-equiv="content-style-type"  content="text/css">
+  <meta http-equiv="X-UA-Compatible"     content="IE=Edge">
+  <title>テーブル問合せ</title>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/pepper-grinder/jquery-ui.css">
+  <script type="text/javascript">
+    window.moveTo(20,20)
+    window.resizeTo(1300, 750)
+  </script>
+  <style type="text/css">
+    * { margin: 10; padding: 10; } 
+    body { font-size: 15px; background:#fff; }
+    #fixedTableArea  { width: 1060px; height: 550px; margin: 20px; }
+    #topLeftArea     { width: 30px;   float: left; overflow: hidden; }
+    #topRightArea    { width: 1003px; float: left; overflow: hidden; }
+    #bottomLeftArea  { width: 30px;   float: left; height: 492px; overflow: hidden; }
+    #bottomRightArea { width: 1020px; height: 510px; overflow: scroll; }
+    .fixedTable { border-collapse: collapse; table-layout: fixed; width: 1000px; }
+    .fixedTable td { border: 1px solid #888; overflow: hidden; height: 30px; white-space: nowrap; }
+    .fixedTable tr:nth-child(even) {background: #eee;}
+    .table-hover tr:hover {background: #ff0;}
+    .topTable th { border: 1px solid #888; background: #EDF7FF; }
+    .title{ background:#999; color:#fff; width:800px; margin:10px auto 30px auto; }
+    input{ margin: auto; border: solid 1px #999; }
+    button{ margin: auto; background: #ddd; border: solid 1px #999; }
+    .result{ position:relative; margin:10px auto;
+       .res{ position:absolute; left:500px; top:0; transform:translateX(-500px); } }
+    .trans-enter-active, .trans-leave-active { transition: all .5s; }
+    .trans-enter-to, .trans-leave{ opacity:1; }
+    .trans-enter,
+    .trans-leave-to { opacity:0; transform:translate(-500px,10px)  !important ; }
+    .trans-leave-to { opacity:0; transform:translate(-500px,-10px) !important ; }
+  </style>
+</head>
+<body class="base">
+  <div id="tab02">
+    <table><tr>
+      <td>　件数：<input type="tel"  id="maxRow"   value="20" size=4"   maxlength="4"></td>
+      <td>　条件：<input type="text" id="whereRow" value=""   size=100" maxlength="120"></td>
+      <td>　<button id="selRec" onClick="setList()" value="selRec" class="btn btn-info" />検索</button></td>
+      <td>　<button id="btn2"   onClick="opnDial()" value="btn2"  class="btn btn-info" />分類</button></td>
+      <td><input type=text" id="selGenre" value="プログラミング" class="display: none;"></td>
+    </tr></table>
+    <div id="fixedTableArea">
+      <div id="topLeftArea">
+        <table id="topLeftTable" class="fixedTable topTable">
+          <tbody>
+            <tr><th>#</th></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="topRightArea">
+        <table id="topRightTable" class="fixedTable topTable">
+          <tbody><tr>
+            <th width="90px">ISDN13</th>
+            <th width="300px">書名</th>
+            <th width="150px">著者</th>
+            <th width="200px">発行元</th>
+            <th width="150px">分類</th>
+            <th width="70px">発行日</th>
+            <th width="50px">価格</th></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="bottomLeftArea">
+        <table id="bottomLeftTable" class="fixedTable table-hover">
+          <tbody id="lstBdL">
+          </tbody>
+        </table>
+      </div>
+      <div id="bottomRightArea">
+        <table id="bottomRightTable" class="fixedTable table-hover">
+          <tbody id="lstBdR">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div id="input" title="ジャンル">
+    <table>
+      <tr>
+        <th>選択</th>
+        <td><select id="inputName"></select></td>
+      </tr>
+    </table>
+  </div>
+  <script>
+    setList();
+    function setList() {
+      const tDatSrc ='Provider=MSDASQL; Data Source=Connector_MariaDB';
+      var cn = new ActiveXObject('ADODB.Connection');
+      var rs = new ActiveXObject('ADODB.Recordset');
+      var mySql = "SELECT ISBN13,BOOKNAME,AUTHOR,PUBLISHER,GENRE,date_format(ISSUEDATE,'%Y-%m-%d'),PURCHASE"
+                + " FROM BOOKLOG";
+      var selGenre = $('#selGenre').val();
+      if (selGenre == 'ALL') {
+        mySql += " WHERE GENRE = GENRE";
+      } else if (selGenre == 'NULL') {
+        mySql += " WHERE GENRE IS NULL";
+      } else if (selGenre == '') {
+        mySql += " WHERE GENRE = ''";
+      } else {
+        mySql += " WHERE GENRE = '" + selGenre + "'";
+      }
+      $('#selGenre').prop('disabled', true);
+      var maxRow   = $('#maxRow').val();
+      var whereRow = $('#whereRow').val();
+      if (whereRow) {
+        mySql += " AND " + whereRow;
+      }
+      mySql += " LIMIT " + maxRow;
+      cn.Open(tDatSrc);
+      try {
+        rs.Open(mySql, cn);
+      } catch (e) {
+        cn.Close();
+        document.write('対象レコード検索不能' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+        alert('対象レコード検索不能');
+        return;
+      }
+      var strDocL = '';
+      var strDocR = '';
+      var rCnt = 1;
+      while (!rs.EOF){
+        strDocL += '<tr><td>' + rCnt + '</td></tr>';
+        strDocR += '<tr><td width="90px" >' + rs(0).value + '</td>';
+        strDocR +=     '<td width="300px">' + rs(1).value + '</td>';
+        strDocR +=     '<td width="150px">' + rs(2).value + '</td>';
+        strDocR +=     '<td width="200px">' + rs(3).value + '</td>';
+        strDocR +=     '<td width="150px">' + rs(4).value + '</td>';
+        strDocR +=     '<td width="70px" >' + rs(5).value + '</td>';
+        strDocR +=     '<td width="50px" >' + rs(6).value + '</td></tr>';
+        rs.MoveNext();
+        rCnt += 1;
+      }
+      rs.Close();
+      cn.Close();
+      rs = null;
+      cn = null;
+      $('#lstBdL').replaceWith('<tbody id="lstBdL">' + strDocL + '</tbody>');
+      $('#lstBdR').replaceWith('<tbody id="lstBdR">' + strDocR + '</tbody>');
+    }
+    function opnDial() {
+      const tDatSrc ='Provider=MSDASQL; Data Source=Connector_MariaDB';
+      var cn = new ActiveXObject('ADODB.Connection');
+      var rs = new ActiveXObject('ADODB.Recordset');
+      var mySql = "SELECT DISTINCT GENRE FROM BOOKLOG ORDER BY GENRE";
+      cn.Open(tDatSrc);
+      try {
+        rs.Open(mySql, cn);
+      } catch (e) {
+        cn.Close();
+        document.write('対象レコード検索不能' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+        alert('対象レコード検索不能');
+        return;
+      }
+      var strDoc = '';
+      while (!rs.EOF){
+        strDoc += '<option value="' + rs(0).value + '">' + rs(0).value + '</option>';
+        rs.MoveNext();
+      }
+      strDoc += '<option value="ALL">ALL</option>';
+      rs.Close();
+      cn.Close();
+      rs = null;
+      cn = null;
+      $('#inputName').replaceWith('<select id="inputName">' + strDoc + '</select>');
+      $("#input").dialog("open");
+    }
+    $("#input").dialog({
+      autoOpen: false,
+      modal: true,
+      buttons: {
+        "ＯＫ": function() {
+          $('#selGenre').val($("#inputName").val());
+          $(this).dialog("close");
+          setList();},
+        "キャンセル": function() {
+          $(this).dialog("close");}
+      }
+    });
+    $('#bottomArea').scroll(function(e) {
+      $('#topArea').scrollLeft($(this).scrollLeft());
+    });
+    $('#bottomRightArea').scroll(function(e) {
+      $('#bottomLeftArea').scrollTop($(this).scrollTop()); 
+      $('#topRightArea').scrollLeft($(this).scrollLeft());
+    });
+  </script>
+</body>
+</html>
